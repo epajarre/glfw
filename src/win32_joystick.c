@@ -36,6 +36,8 @@
 #define _GLFW_TYPE_SLIDER   1
 #define _GLFW_TYPE_BUTTON   2
 #define _GLFW_TYPE_POV      3
+#define _GLFW_MAX_BUTTONS 128
+#define _GLFW_MAX_POVS      4
 
 // Data produced with DirectInput device object enumeration
 //
@@ -83,7 +85,8 @@ static const GUID _glfw_GUID_POV =
 
 // Object data array for our clone of c_dfDIJoystick
 // Generated with https://github.com/elmindreda/c_dfDIJoystick2
-//
+// with the trailing velocity/acceleration/force entries replaced by generic axis entries so
+// that axes beyond the six standard ones and two sliders are exposed
 static DIOBJECTDATAFORMAT _glfwObjectDataFormats[] =
 {
     { &GUID_XAxis,DIJOFS_X,DIDFT_AXIS|DIDFT_OPTIONAL|DIDFT_ANYINSTANCE,DIDOI_ASPECTPOSITION },
@@ -226,33 +229,34 @@ static DIOBJECTDATAFORMAT _glfwObjectDataFormats[] =
     { NULL,DIJOFS_BUTTON(125),DIDFT_BUTTON|DIDFT_OPTIONAL|DIDFT_ANYINSTANCE,0 },
     { NULL,DIJOFS_BUTTON(126),DIDFT_BUTTON|DIDFT_OPTIONAL|DIDFT_ANYINSTANCE,0 },
     { NULL,DIJOFS_BUTTON(127),DIDFT_BUTTON|DIDFT_OPTIONAL|DIDFT_ANYINSTANCE,0 },
-    { &GUID_XAxis,FIELD_OFFSET(DIJOYSTATE2,lVX),DIDFT_AXIS | DIDFT_OPTIONAL|DIDFT_ANYINSTANCE,DIDOI_ASPECTVELOCITY },
-    { &GUID_YAxis,FIELD_OFFSET(DIJOYSTATE2,lVY),DIDFT_AXIS | DIDFT_OPTIONAL|DIDFT_ANYINSTANCE,DIDOI_ASPECTVELOCITY },
-    { &GUID_ZAxis,FIELD_OFFSET(DIJOYSTATE2,lVZ),DIDFT_AXIS | DIDFT_OPTIONAL|DIDFT_ANYINSTANCE,DIDOI_ASPECTVELOCITY },
-    { &GUID_RxAxis,FIELD_OFFSET(DIJOYSTATE2,lVRx),DIDFT_AXIS | DIDFT_OPTIONAL|DIDFT_ANYINSTANCE,DIDOI_ASPECTVELOCITY },
-    { &GUID_RyAxis,FIELD_OFFSET(DIJOYSTATE2,lVRy),DIDFT_AXIS | DIDFT_OPTIONAL|DIDFT_ANYINSTANCE,DIDOI_ASPECTVELOCITY },
-    { &GUID_RzAxis,FIELD_OFFSET(DIJOYSTATE2,lVRz),DIDFT_AXIS | DIDFT_OPTIONAL|DIDFT_ANYINSTANCE,DIDOI_ASPECTVELOCITY },
-    { &GUID_Slider,FIELD_OFFSET(DIJOYSTATE2,rglVSlider[0]),DIDFT_AXIS | DIDFT_OPTIONAL|DIDFT_ANYINSTANCE,DIDOI_ASPECTVELOCITY },
-    { &GUID_Slider,FIELD_OFFSET(DIJOYSTATE2,rglVSlider[1]),DIDFT_AXIS | DIDFT_OPTIONAL|DIDFT_ANYINSTANCE,DIDOI_ASPECTVELOCITY },
-    { &GUID_XAxis,FIELD_OFFSET(DIJOYSTATE2,lAX),DIDFT_AXIS | DIDFT_OPTIONAL|DIDFT_ANYINSTANCE,DIDOI_ASPECTACCEL},
-    { &GUID_YAxis,FIELD_OFFSET(DIJOYSTATE2,lAY),DIDFT_AXIS | DIDFT_OPTIONAL|DIDFT_ANYINSTANCE,DIDOI_ASPECTACCEL},
-    { &GUID_ZAxis,FIELD_OFFSET(DIJOYSTATE2,lAZ),DIDFT_AXIS | DIDFT_OPTIONAL|DIDFT_ANYINSTANCE,DIDOI_ASPECTACCEL},
-    { &GUID_RxAxis,FIELD_OFFSET(DIJOYSTATE2,lARx),DIDFT_AXIS | DIDFT_OPTIONAL|DIDFT_ANYINSTANCE,DIDOI_ASPECTACCEL},
-    { &GUID_RyAxis,FIELD_OFFSET(DIJOYSTATE2,lARy),DIDFT_AXIS | DIDFT_OPTIONAL|DIDFT_ANYINSTANCE,DIDOI_ASPECTACCEL},
-    { &GUID_RzAxis,FIELD_OFFSET(DIJOYSTATE2,lARz),DIDFT_AXIS | DIDFT_OPTIONAL|DIDFT_ANYINSTANCE,DIDOI_ASPECTACCEL},
-    { &GUID_Slider,FIELD_OFFSET(DIJOYSTATE2,rglASlider[0]),DIDFT_AXIS | DIDFT_OPTIONAL|DIDFT_ANYINSTANCE,DIDOI_ASPECTACCEL },
-    { &GUID_Slider,FIELD_OFFSET(DIJOYSTATE2,rglASlider[1]),DIDFT_AXIS | DIDFT_OPTIONAL|DIDFT_ANYINSTANCE,DIDOI_ASPECTACCEL },
-    { &GUID_XAxis,FIELD_OFFSET(DIJOYSTATE2,lFX),DIDFT_AXIS | DIDFT_OPTIONAL|DIDFT_ANYINSTANCE,DIDOI_ASPECTFORCE },
-    { &GUID_YAxis,FIELD_OFFSET(DIJOYSTATE2,lFY),DIDFT_AXIS | DIDFT_OPTIONAL|DIDFT_ANYINSTANCE,DIDOI_ASPECTFORCE },
-    { &GUID_ZAxis,FIELD_OFFSET(DIJOYSTATE2,lFZ),DIDFT_AXIS | DIDFT_OPTIONAL|DIDFT_ANYINSTANCE,DIDOI_ASPECTFORCE },
-    { &GUID_RxAxis,FIELD_OFFSET(DIJOYSTATE2,lFRx),DIDFT_AXIS | DIDFT_OPTIONAL|DIDFT_ANYINSTANCE,DIDOI_ASPECTFORCE },
-    { &GUID_RyAxis,FIELD_OFFSET(DIJOYSTATE2,lFRy),DIDFT_AXIS | DIDFT_OPTIONAL|DIDFT_ANYINSTANCE,DIDOI_ASPECTFORCE },
-    { &GUID_RzAxis,FIELD_OFFSET(DIJOYSTATE2,lFRz),DIDFT_AXIS | DIDFT_OPTIONAL|DIDFT_ANYINSTANCE,DIDOI_ASPECTFORCE },
-    { &GUID_Slider,FIELD_OFFSET(DIJOYSTATE2,rglFSlider[0]),DIDFT_AXIS | DIDFT_OPTIONAL|DIDFT_ANYINSTANCE,DIDOI_ASPECTFORCE },
-    { &GUID_Slider,FIELD_OFFSET(DIJOYSTATE2,rglFSlider[1]),DIDFT_AXIS | DIDFT_OPTIONAL|DIDFT_ANYINSTANCE,DIDOI_ASPECTFORCE }
+    // Additional positional axes using DIJOYSTATE2 storage
+    { NULL,FIELD_OFFSET(DIJOYSTATE2,lVX),DIDFT_AXIS | DIDFT_OPTIONAL | DIDFT_ANYINSTANCE,DIDOI_ASPECTPOSITION },
+    { NULL,FIELD_OFFSET(DIJOYSTATE2,lVY),DIDFT_AXIS | DIDFT_OPTIONAL | DIDFT_ANYINSTANCE,DIDOI_ASPECTPOSITION },
+    { NULL,FIELD_OFFSET(DIJOYSTATE2,lVZ),DIDFT_AXIS | DIDFT_OPTIONAL | DIDFT_ANYINSTANCE,DIDOI_ASPECTPOSITION },
+    { NULL,FIELD_OFFSET(DIJOYSTATE2,lVRx),DIDFT_AXIS | DIDFT_OPTIONAL | DIDFT_ANYINSTANCE,DIDOI_ASPECTPOSITION },
+    { NULL,FIELD_OFFSET(DIJOYSTATE2,lVRy),DIDFT_AXIS | DIDFT_OPTIONAL | DIDFT_ANYINSTANCE,DIDOI_ASPECTPOSITION },
+    { NULL,FIELD_OFFSET(DIJOYSTATE2,lVRz),DIDFT_AXIS | DIDFT_OPTIONAL | DIDFT_ANYINSTANCE,DIDOI_ASPECTPOSITION },
+    { NULL,FIELD_OFFSET(DIJOYSTATE2,rglVSlider[0]),DIDFT_AXIS | DIDFT_OPTIONAL | DIDFT_ANYINSTANCE,DIDOI_ASPECTPOSITION },
+    { NULL,FIELD_OFFSET(DIJOYSTATE2,rglVSlider[1]),DIDFT_AXIS | DIDFT_OPTIONAL | DIDFT_ANYINSTANCE,DIDOI_ASPECTPOSITION },
+    { NULL,FIELD_OFFSET(DIJOYSTATE2,lAX),DIDFT_AXIS | DIDFT_OPTIONAL | DIDFT_ANYINSTANCE,DIDOI_ASPECTPOSITION },
+    { NULL,FIELD_OFFSET(DIJOYSTATE2,lAY),DIDFT_AXIS | DIDFT_OPTIONAL | DIDFT_ANYINSTANCE,DIDOI_ASPECTPOSITION },
+    { NULL,FIELD_OFFSET(DIJOYSTATE2,lAZ),DIDFT_AXIS | DIDFT_OPTIONAL | DIDFT_ANYINSTANCE,DIDOI_ASPECTPOSITION },
+    { NULL,FIELD_OFFSET(DIJOYSTATE2,lARx),DIDFT_AXIS | DIDFT_OPTIONAL | DIDFT_ANYINSTANCE,DIDOI_ASPECTPOSITION },
+    { NULL,FIELD_OFFSET(DIJOYSTATE2,lARy),DIDFT_AXIS | DIDFT_OPTIONAL | DIDFT_ANYINSTANCE,DIDOI_ASPECTPOSITION },
+    { NULL,FIELD_OFFSET(DIJOYSTATE2,lARz),DIDFT_AXIS | DIDFT_OPTIONAL | DIDFT_ANYINSTANCE,DIDOI_ASPECTPOSITION },
+    { NULL,FIELD_OFFSET(DIJOYSTATE2,rglASlider[0]),DIDFT_AXIS | DIDFT_OPTIONAL | DIDFT_ANYINSTANCE,DIDOI_ASPECTPOSITION },
+    { NULL,FIELD_OFFSET(DIJOYSTATE2,rglASlider[1]),DIDFT_AXIS | DIDFT_OPTIONAL | DIDFT_ANYINSTANCE,DIDOI_ASPECTPOSITION },
+    { NULL,FIELD_OFFSET(DIJOYSTATE2,lFX),DIDFT_AXIS | DIDFT_OPTIONAL | DIDFT_ANYINSTANCE,DIDOI_ASPECTPOSITION },
+    { NULL,FIELD_OFFSET(DIJOYSTATE2,lFY),DIDFT_AXIS | DIDFT_OPTIONAL | DIDFT_ANYINSTANCE,DIDOI_ASPECTPOSITION },
+    { NULL,FIELD_OFFSET(DIJOYSTATE2,lFZ),DIDFT_AXIS | DIDFT_OPTIONAL | DIDFT_ANYINSTANCE,DIDOI_ASPECTPOSITION },
+    { NULL,FIELD_OFFSET(DIJOYSTATE2,lFRx),DIDFT_AXIS | DIDFT_OPTIONAL | DIDFT_ANYINSTANCE,DIDOI_ASPECTPOSITION },
+    { NULL,FIELD_OFFSET(DIJOYSTATE2,lFRy),DIDFT_AXIS | DIDFT_OPTIONAL | DIDFT_ANYINSTANCE,DIDOI_ASPECTPOSITION },
+    { NULL,FIELD_OFFSET(DIJOYSTATE2,lFRz),DIDFT_AXIS | DIDFT_OPTIONAL | DIDFT_ANYINSTANCE,DIDOI_ASPECTPOSITION },
+    { NULL,FIELD_OFFSET(DIJOYSTATE2,rglFSlider[0]),DIDFT_AXIS | DIDFT_OPTIONAL | DIDFT_ANYINSTANCE,DIDOI_ASPECTPOSITION },
+    { NULL,FIELD_OFFSET(DIJOYSTATE2,rglFSlider[1]),DIDFT_AXIS | DIDFT_OPTIONAL | DIDFT_ANYINSTANCE,DIDOI_ASPECTPOSITION }
 };
 
-// Our clone of c_dfDIJoystick
+// Our clone of c_dfDIJoystick2
 //
 static const DIDATAFORMAT _glfwDataFormat =
 {
@@ -300,6 +304,14 @@ static int compareJoystickObjects(const void* first, const void* second)
 {
     const _GLFWjoyobjectWin32* fo = first;
     const _GLFWjoyobjectWin32* so = second;
+    const int extraStart = FIELD_OFFSET(DIJOYSTATE2, lVX);
+
+    const int fExtra = fo->offset >= extraStart;
+    const int sExtra = so->offset >= extraStart;
+
+    // Extended axes come after all legacy objects
+    if (fExtra != sExtra)
+        return fExtra - sExtra;
 
     if (fo->type != so->type)
         return fo->type - so->type;
@@ -388,9 +400,41 @@ static void closeJoystick(_GLFWjoystick* js)
     _glfwFreeJoystick(js);
 }
 
+// Finds the offset of the specified axis in the DirectInput object data format
+static GLFWbool findAxisOffset(_GLFWobjenumWin32* data,
+                               const DIDEVICEOBJECTINSTANCEW* doi,
+                               int* offset)
+{
+    size_t i;
+
+    for (i = 0; i < sizeof(_glfwObjectDataFormats) /
+         sizeof(_glfwObjectDataFormats[0]); i++)
+    {
+        const DIOBJECTDATAFORMAT* fmt = &_glfwObjectDataFormats[i];
+        DIDEVICEOBJECTINSTANCEW info = { 0 };
+
+        if (!(DIDFT_GETTYPE(fmt->dwType) & DIDFT_AXIS))
+            continue;
+
+        info.dwSize = sizeof(info);
+
+        if (SUCCEEDED(IDirectInputDevice8_GetObjectInfo(
+            data->device, &info,
+            fmt->dwOfs, DIPH_BYOFFSET)) &&
+            info.dwType == doi->dwType)
+        {
+            *offset = fmt->dwOfs;
+            return GLFW_TRUE;
+        }
+    }
+
+    return GLFW_FALSE;
+}
+
 // DirectInput device object enumeration callback
 // Insights gleaned from SDL
 //
+#define VERIFY_COMPATIBILITY 1
 static BOOL CALLBACK deviceObjectCallback(const DIDEVICEOBJECTINSTANCEW* doi,
                                           void* user)
 {
@@ -400,28 +444,44 @@ static BOOL CALLBACK deviceObjectCallback(const DIDEVICEOBJECTINSTANCEW* doi,
     if (DIDFT_GETTYPE(doi->dwType) & DIDFT_AXIS)
     {
         DIPROPRANGE dipr;
-
+#if VERIFY_COMPATIBILITY
+        int ref = -1;
         if (memcmp(&doi->guidType, &GUID_Slider, sizeof(GUID)) == 0)
         {
             if (data->sliderCount >= 2)
-                return DIENUM_CONTINUE;
-            object->offset = DIJOFS_SLIDER(data->sliderCount);
+                ref = -99;
+            else
+                ref = DIJOFS_SLIDER(data->sliderCount);
         }
         else if (memcmp(&doi->guidType, &GUID_XAxis, sizeof(GUID)) == 0)
-            object->offset = DIJOFS_X;
+            ref = DIJOFS_X;
         else if (memcmp(&doi->guidType, &GUID_YAxis, sizeof(GUID)) == 0)
-            object->offset = DIJOFS_Y;
+            ref = DIJOFS_Y;
         else if (memcmp(&doi->guidType, &GUID_ZAxis, sizeof(GUID)) == 0)
-            object->offset = DIJOFS_Z;
+            ref = DIJOFS_Z;
         else if (memcmp(&doi->guidType, &GUID_RxAxis, sizeof(GUID)) == 0)
-            object->offset = DIJOFS_RX;
+            ref = DIJOFS_RX;
         else if (memcmp(&doi->guidType, &GUID_RyAxis, sizeof(GUID)) == 0)
-            object->offset = DIJOFS_RY;
+            ref = DIJOFS_RY;
         else if (memcmp(&doi->guidType, &GUID_RzAxis, sizeof(GUID)) == 0)
-            object->offset = DIJOFS_RZ;
+            ref = DIJOFS_RZ;
         else
+            ref = -99;
+#endif
+        if (!findAxisOffset(data, doi, &object->offset))
+        {
+#if VERIFY_COMPATIBILITY
+            if (ref != -99)
+                _glfwInputError(GLFW_PLATFORM_ERROR,
+                    "Win32: Compatibility issue with axis mapping ref %d != -99", ref);
+#endif
             return DIENUM_CONTINUE;
-
+        }
+#if VERIFY_COMPATIBILITY
+        if (ref >=0 && object->offset != ref)
+            _glfwInputError(GLFW_PLATFORM_ERROR,
+                "Win32: Compatibility issue with axis mapping ref %d != %d", ref, object->offset);
+#endif
         ZeroMemory(&dipr, sizeof(dipr));
         dipr.diph.dwSize = sizeof(dipr);
         dipr.diph.dwHeaderSize = sizeof(dipr.diph);
@@ -450,7 +510,7 @@ static BOOL CALLBACK deviceObjectCallback(const DIDEVICEOBJECTINSTANCEW* doi,
     }
     else if (DIDFT_GETTYPE(doi->dwType) & DIDFT_BUTTON)
     {
-        if (data->buttonCount >= 128)
+        if (data->buttonCount >= _GLFW_MAX_BUTTONS)
             return DIENUM_CONTINUE;
         object->offset = DIJOFS_BUTTON(data->buttonCount);
         object->type = _GLFW_TYPE_BUTTON;
@@ -458,7 +518,7 @@ static BOOL CALLBACK deviceObjectCallback(const DIDEVICEOBJECTINSTANCEW* doi,
     }
     else if (DIDFT_GETTYPE(doi->dwType) & DIDFT_POV)
     {
-        if (data->povCount >= 4)
+        if (data->povCount >= _GLFW_MAX_POVS)
             return DIENUM_CONTINUE;
         object->offset = DIJOFS_POV(data->povCount);
         object->type = _GLFW_TYPE_POV;
