@@ -434,7 +434,7 @@ static GLFWbool findAxisOffset(_GLFWobjenumWin32* data,
 // DirectInput device object enumeration callback
 // Insights gleaned from SDL
 //
-#define VERIFY_COMPATIBILITY 1
+#define VERIFY_COMPATIBILITY 0
 static BOOL CALLBACK deviceObjectCallback(const DIDEVICEOBJECTINSTANCEW* doi,
                                           void* user)
 {
